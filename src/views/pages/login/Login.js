@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { supabase } from 'src/supabaseClient'
 import {
   CButton,
   CCard,
@@ -17,6 +17,60 @@ import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 
 const Login = () => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const redirectAfterLogin = (profile) => {
+    if (!profile) {
+      window.location.href = '/#/'
+      return
+    }
+
+    if (profile.role === 'client') {
+      window.location.href = profile.onboarding_completed ? '/#/' : '/#/client/preferences'
+      return
+    }
+
+    if (profile.role === 'contractor') {
+      window.location.href = profile.onboarding_completed
+        ? '/#/contractor/dashboard'
+        : '/#/contractor/preferences'
+      return
+    }
+
+    if (profile.role === 'admin') {
+      window.location.href = '/#/admin/usuarios'
+      return
+    }
+
+    window.location.href = '/#/'
+  }
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      alert('Credenciales incorrectas ❌')
+      return
+    }
+
+    const user = data.user
+
+    // 🔍 Buscar rol
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, onboarding_completed')
+      .eq('id', user.id)
+      .single()
+
+    redirectAfterLogin(profile)
+  }
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -25,15 +79,19 @@ const Login = () => {
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
-                  <CForm>
+                  <CForm onSubmit={handleLogin}>
                     <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
-                      <CFormInput placeholder="Username" autoComplete="username" />
+                      <CFormInput
+                        placeholder="Email"
+                        onChange={(e) => setEmail(e.target.value)}
+                      />
                     </CInputGroup>
+
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
                         <CIcon icon={cilLockLocked} />
@@ -41,38 +99,21 @@ const Login = () => {
                       <CFormInput
                         type="password"
                         placeholder="Password"
-                        autoComplete="current-password"
+                        onChange={(e) => setPassword(e.target.value)}
                       />
                     </CInputGroup>
-                    <CRow>
-                      <CCol xs={6}>
-                        <CButton color="primary" className="px-4">
-                          Login
-                        </CButton>
-                      </CCol>
-                      <CCol xs={6} className="text-right">
-                        <CButton color="link" className="px-0">
-                          Forgot password?
-                        </CButton>
-                      </CCol>
-                    </CRow>
+
+                    <CButton type="submit">Login</CButton>
                   </CForm>
                 </CCardBody>
               </CCard>
+
               <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
                 <CCardBody className="text-center">
-                  <div>
-                    <h2>Sign up</h2>
-                    <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
-                    </p>
-                    <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
-                      </CButton>
-                    </Link>
-                  </div>
+                  <h2>Sign up</h2>
+                  <a href="/#/register">
+                    <CButton color="light">Register</CButton>
+                  </a>
                 </CCardBody>
               </CCard>
             </CCardGroup>

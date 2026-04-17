@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState } from 'react'
+import { supabase } from '../../../supabaseClient'
 import {
   CButton,
   CCard,
@@ -15,6 +16,58 @@ import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 
 const Register = () => {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [repeatPassword, setRepeatPassword] = useState('')
+  const [role, setRole] = useState('client')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+
+    if (password !== repeatPassword) {
+      alert('Las contraseñas no coinciden ❌')
+      return
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    const user = data.user
+
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          id: user.id,
+          email,
+          role,
+          onboarding_completed: false,
+        },
+      ])
+
+    if (profileError) {
+      alert(profileError.message)
+      return
+    }
+
+    alert('Usuario registrado correctamente ✅')
+
+    await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    window.location.href =
+      role === 'contractor' ? '/#/contractor/preferences' : '/#/client/preferences'
+  }
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -22,19 +75,32 @@ const Register = () => {
           <CCol md={9} lg={7} xl={6}>
             <CCard className="mx-4">
               <CCardBody className="p-4">
-                <CForm>
-                  <h1>Register</h1>
-                  <p className="text-body-secondary">Create your account</p>
+                <CForm onSubmit={handleSubmit}>
+                  <h1>Registro</h1>
+
+                  {/* EMAIL */}
                   <CInputGroup className="mb-3">
                     <CInputGroupText>
                       <CIcon icon={cilUser} />
                     </CInputGroupText>
-                    <CFormInput placeholder="Username" autoComplete="username" />
+                    <CFormInput
+                      placeholder="Email"
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </CInputGroup>
-                  <CInputGroup className="mb-3">
-                    <CInputGroupText>@</CInputGroupText>
-                    <CFormInput placeholder="Email" autoComplete="email" />
-                  </CInputGroup>
+
+                  {/* ROLE */}
+                  <div className="mb-3">
+                    <select
+                      className="form-control"
+                      onChange={(e) => setRole(e.target.value)}
+                    >
+                      <option value="client">Cliente</option>
+                      <option value="contractor">Contratista</option>
+                    </select>
+                  </div>
+
+                  {/* PASSWORD */}
                   <CInputGroup className="mb-3">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -42,9 +108,11 @@ const Register = () => {
                     <CFormInput
                       type="password"
                       placeholder="Password"
-                      autoComplete="new-password"
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </CInputGroup>
+
+                  {/* REPEAT PASSWORD */}
                   <CInputGroup className="mb-4">
                     <CInputGroupText>
                       <CIcon icon={cilLockLocked} />
@@ -52,11 +120,14 @@ const Register = () => {
                     <CFormInput
                       type="password"
                       placeholder="Repeat password"
-                      autoComplete="new-password"
+                      onChange={(e) => setRepeatPassword(e.target.value)}
                     />
                   </CInputGroup>
+
                   <div className="d-grid">
-                    <CButton color="success">Create Account</CButton>
+                    <CButton color="success" type="submit">
+                      Crear Cuenta
+                    </CButton>
                   </div>
                 </CForm>
               </CCardBody>

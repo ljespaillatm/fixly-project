@@ -1,4 +1,5 @@
-import React from 'react'
+import { supabase } from '../../supabaseClient'
+import React, { useState, useEffect } from 'react'
 import classNames from 'classnames'
 
 import {
@@ -55,6 +56,29 @@ import WidgetsDropdown from '../widgets/WidgetsDropdown'
 import MainChart from './MainChart'
 
 const Dashboard = () => {
+
+  const [services, setServices] = useState([])
+  useEffect(() => {
+    getServices()
+  }, [])
+  
+  async function getServices() {
+    const { data, error } = await supabase
+    .from('services')
+    .select('*')
+
+  console.log("DATA:", data)
+  console.log("ERROR:", error)
+
+  if (error) {
+    console.log("ERROR:", error)
+  } else {
+    setServices(data)
+  }
+
+  }
+
+   
   const progressExample = [
     { title: 'Visits', value: '29.703 Users', percent: 40, color: 'success' },
     { title: 'Unique', value: '24.093 Users', percent: 20, color: 'info' },
@@ -176,7 +200,9 @@ const Dashboard = () => {
     },
   ]
 
-  return (
+  return ( 
+    
+    
     <>
       <WidgetsDropdown className="mb-4" />
       <CCard className="mb-4">
@@ -234,6 +260,25 @@ const Dashboard = () => {
         </CCardFooter>
       </CCard>
       <WidgetsBrand className="mb-4" withCharts />
+      <CCard className="mb-4">
+  <CCardHeader>
+    <strong>Servicios disponibles</strong>
+  </CCardHeader>
+
+  <CCardBody>
+    {services.length === 0 ? (
+      <p>No hay servicios todavía...</p>
+    ) : (
+      services.map(service => (
+        <pre key={service.id}>
+          {JSON.stringify(service, null, 2)}
+        </pre>
+      
+      ))
+    )}
+  </CCardBody>
+</CCard>
+
       <CRow>
         <CCol xs>
           <CCard className="mb-4">
