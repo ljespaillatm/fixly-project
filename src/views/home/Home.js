@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../supabaseClient'
-import { useNavigate } from 'react-router-dom'
 
 import {
+  CButton,
   CCard,
   CCardBody,
   CCardTitle,
   CCol,
-  CRow,
   CContainer,
+  CRow,
+  CSpinner,
 } from '@coreui/react'
 
 const Home = () => {
   const navigate = useNavigate()
+
+  const [authResolved, setAuthResolved] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
 
   const [categories, setCategories] = useState([])
   const [userZone, setUserZone] = useState('')
@@ -20,34 +25,25 @@ const Home = () => {
   const [ratingsMap, setRatingsMap] = useState({})
 
   useEffect(() => {
-    console.log('[Home] mount')
-    loadCategories()
-    loadUserZoneAndContractors()
-
-    return () => {
-      console.log('[Home] unmount')
-    }
+    supabase.auth.getSession().then(({ data }) => {
+      setCurrentUser(data.session?.user ?? null)
+      setAuthResolved(true)
+    })
   }, [])
 
   useEffect(() => {
-    console.log('[Home] categories state updated:', categories)
-  }, [categories])
+    if (!authResolved || !currentUser) return
 
-  const setCategoriesWithLog = (nextCategories, reason) => {
-    console.log('[Home] setCategories called:', { reason, nextCategories })
-    setCategories(nextCategories)
-  }
+    loadCategories()
+    loadUserZoneAndContractorsForUser(currentUser.id)
+  }, [authResolved, currentUser])
 
   async function loadCategories() {
     const { data: servicesData, error: servicesError } = await supabase
       .from('services')
       .select('id, category')
 
-    console.log('[Home] services query result:', { servicesData, servicesError })
-
     if (servicesError || !servicesData) {
-      console.error('Error loading services for Home categories:', servicesError)
-      // Keep last known categories on failure to avoid flicker/disappear issues.
       return
     }
 
@@ -58,32 +54,18 @@ const Home = () => {
           .filter((category) => typeof category === 'string' && category.trim().length > 0),
       ),
     ]
-    console.log('[Home] computed categories:', allCategories)
-    // Clear categories only when we have a real successful empty result.
-    setCategoriesWithLog(allCategories, 'services query success')
+    setCategories(allCategories)
   }
 
-  async function loadUserZoneAndContractors() {
-    const { data: authData } = await supabase.auth.getUser()
-    const currentUser = authData?.user
-
-    if (!currentUser) {
-      setContractors([])
-      setUserZone('')
-      return
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('zone')
-      .eq('id', currentUser.id)
-      .single()
+  async function loadUserZoneAndContractorsForUser(userId) {
+    const { data: profile } = await supabase.from('profiles').select('zone').eq('id', userId).single()
 
     const zone = (profile?.zone || '').trim()
     setUserZone(zone)
 
     if (!zone) {
       setContractors([])
+      setRatingsMap({})
       return
     }
 
@@ -93,7 +75,6 @@ const Home = () => {
       .ilike('zone', zone)
 
     if (zonesError || !zonesRows?.length) {
-      if (zonesError) console.error('[Home] contractor_zones query failed:', zonesError)
       setContractors([])
       setRatingsMap({})
       return
@@ -107,7 +88,6 @@ const Home = () => {
       .in('contractor_id', contractorIdsInZone)
 
     if (coverageError || !csRows?.length) {
-      if (coverageError) console.error('[Home] contractor_services query failed:', coverageError)
       setContractors([])
       setRatingsMap({})
       return
@@ -121,7 +101,6 @@ const Home = () => {
       .in('id', matchedContractorIds)
 
     if (profError || !profRows?.length) {
-      if (profError) console.error('[Home] profiles query failed:', profError)
       setContractors([])
       setRatingsMap({})
       return
@@ -173,22 +152,69 @@ const Home = () => {
     setRatingsMap(ratingLabels)
   }
 
+  if (!authResolved) {
+    return (
+      <div className="py-5 text-center">
+        <CSpinner color="primary" />
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <CContainer fluid className="px-lg-5 py-5">
+        <CRow className="align-items-center gy-5">
+          <CCol lg={6}>
+            <p className="text-body-secondary text-uppercase small fw-semibold mb-2">Marketplace de servicios</p>
+            <h1 className="display-5 fw-bold mb-4">Bienvenido a Fixly</h1>
+            <p className="lead text-body-secondary mb-4">
+              Fixly es una plataforma que conecta a <strong>personas que necesitan un servicio</strong> con{' '}
+              <strong>contratistas de confianza</strong> en su zona: plomería, electricidad, pintura y más.
+              Explora categorías, reserva en pocos pasos y coordina todo desde un solo lugar.
+            </p>
+            <ul className="text-body-secondary mb-4">
+              <li>Crea tu cuenta como cliente o contratista.</li>
+              <li>Los clientes buscan por categoría y zona; los contratistas publican sus servicios.</li>
+              <li>Reservas, chat y pagos con tarjeta para mayor tranquilidad.</li>
+            </ul>
+            <div className="d-flex flex-wrap gap-2">
+              <CButton color="primary" size="lg" as={Link} to="/register">
+                Registrarse gratis
+              </CButton>
+              <CButton color="secondary" variant="outline" size="lg" as={Link} to="/login">
+                Ya tengo cuenta
+              </CButton>
+            </div>
+          </CCol>
+          <CCol lg={6}>
+            <CCard className="border-0 shadow-sm bg-body-tertiary">
+              <CCardBody className="p-4 p-lg-5">
+                <h2 className="h5 mb-3">¿Cómo empezar?</h2>
+                <ol className="text-body-secondary ps-3 mb-0">
+                  <li className="mb-2">Regístrate con tu correo.</li>
+                  <li className="mb-2">Completa tus preferencias (zona, datos de contacto).</li>
+                  <li className="mb-2">Explora servicios o publica los tuyos si eres contratista.</li>
+                  <li>Solicita una reserva y sigue el estado desde tu panel.</li>
+                </ol>
+              </CCardBody>
+            </CCard>
+          </CCol>
+        </CRow>
+      </CContainer>
+    )
+  }
+
   return (
     <CContainer className="mt-4">
-
-      {/* 🔥 CATEGORÍAS con cobertura real en la zona del cliente */}
       <h2 className="mb-4">Categorías</h2>
 
       <CRow>
         {categories.length === 0 ? (
           <p>No hay categorías...</p>
         ) : (
-          categories.map(cat => (
+          categories.map((cat) => (
             <CCol md={4} key={cat} className="mb-4">
-              <CCard
-                style={{ cursor: 'pointer' }}
-                onClick={() => navigate(`/category/${cat}`)}
-              >
+              <CCard style={{ cursor: 'pointer' }} onClick={() => navigate(`/category/${cat}`)}>
                 <CCardBody>
                   <CCardTitle>{cat}</CCardTitle>
                 </CCardBody>
@@ -200,16 +226,13 @@ const Home = () => {
 
       {userZone && (
         <>
-          {/* 🔹 CONTRATISTAS con al menos un servicio + zona compatible */}
-          <h2 className="mt-5 mb-4">
-            Contratistas en tu zona ({userZone})
-          </h2>
+          <h2 className="mt-5 mb-4">Contratistas en tu zona ({userZone})</h2>
 
           <CRow>
             {contractors.length === 0 ? (
               <p>No hay contratistas en tu zona</p>
             ) : (
-              contractors.map(c => (
+              contractors.map((c) => (
                 <CCol md={4} key={c.id} className="mb-4">
                   <CCard>
                     <CCardBody>
@@ -224,7 +247,6 @@ const Home = () => {
           </CRow>
         </>
       )}
-
     </CContainer>
   )
 }

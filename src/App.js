@@ -13,7 +13,6 @@ import './scss/examples.scss'
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 
 // Pages
-const CategoryDetail = React.lazy(() => import('./views/category/CategoryDetail'))
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Register = React.lazy(() => import('./views/pages/register/Register'))
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
@@ -69,7 +68,6 @@ const App = () => {
         }
       >
         <Routes>
-        <Route path="/category/:category" element={<CategoryDetail />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/404" element={<Page404 />} />

@@ -1,0 +1,1 @@
+async function i(r){const{data:t}=await r.auth.getUser(),e=t?.user;if(!e)return{ok:!1,redirect:"/#/login"};const{data:a}=await r.from("profiles").select("role").eq("id",e.id).maybeSingle();return a?.role!=="admin"?{ok:!1,redirect:"/#/"}:{ok:!0,user:e}}export{i as f};

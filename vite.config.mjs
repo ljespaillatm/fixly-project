@@ -7,7 +7,8 @@ export default defineConfig(() => {
   return {
     base: './',
     build: {
-      outDir: 'build',
+      // Usar `dist` para coincidir con Vercel (preset Vite) y evitar "Output Directory" incorrecto.
+      outDir: 'dist',
     },
     css: {
       postcss: {

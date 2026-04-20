@@ -20,6 +20,7 @@ const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
 const ServiceDetail = React.lazy(() => import('./views/service/ServiceDetail'))
+const CategoryDetail = React.lazy(() => import('./views/category/CategoryDetail'))
 
 // ✅ SOLO UNA DEFINICIÓN DE REGISTER (CORRECTA)
 const Register = React.lazy(() => import('./views/pages/register/Register'))
@@ -73,6 +74,7 @@ const Widgets = React.lazy(() => import('./views/widgets/Widgets'))
 
 const routes = [
   { path: '/register', name: 'Register', element: Register },
+  { path: '/category/:category', name: 'Categoría', element: CategoryDetail },
   { path: '/service/:id', name: 'Service Detail', element: ServiceDetail },
   { path: '/my-bookings', name: 'Mis Reservas', element: MyBookings },
 

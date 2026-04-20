@@ -61,7 +61,9 @@ const AdminContractors = () => {
           .in('contractor_id', ids)
 
         if (rErr) {
-          setError((e) => (e ? `${e}; ${rErr.message}` : rErr.message))
+          setError(
+            `Reseñas: ${rErr.message}. En Supabase → SQL Editor ejecuta el archivo supabase/migrations/20260424_reviews_contractor_columns.sql (añade contractor_id y columnas usadas por la app).`,
+          )
         } else {
           const sums = {}
           ;(reviews || []).forEach((r) => {

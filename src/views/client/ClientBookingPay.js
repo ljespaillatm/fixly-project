@@ -12,6 +12,7 @@ import {
   CSpinner,
 } from '@coreui/react'
 import { supabase } from '../../supabaseClient'
+import { messageForFunctionsInvokeError } from '../../utils/edgeFunctionErrors'
 
 const ClientBookingPay = () => {
   const { bookingId } = useParams()
@@ -36,6 +37,7 @@ const ClientBookingPay = () => {
         .select(
           `
           id,
+          user_id,
           status,
           payment_total_dop,
           payment_deposit_dop,
@@ -70,7 +72,7 @@ const ClientBookingPay = () => {
     })
     setBusy(false)
     if (error) {
-      setErrorMessage(error.message || 'No se pudo iniciar el pago.')
+      setErrorMessage(await messageForFunctionsInvokeError(error))
       return
     }
     if (data?.error) {

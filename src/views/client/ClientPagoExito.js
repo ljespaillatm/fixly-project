@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CAlert, CButton, CContainer, CSpinner } from '@coreui/react'
 import { supabase } from '../../supabaseClient'
+import { messageForFunctionsInvokeError } from '../../utils/edgeFunctionErrors'
 
 function sessionIdFromHash() {
   const hash = window.location.hash || ''
@@ -30,7 +31,7 @@ const ClientPagoExito = () => {
 
       if (error) {
         setStatus('error')
-        setMessage(error.message || 'Error al verificar el pago.')
+        setMessage(await messageForFunctionsInvokeError(error))
         return
       }
       if (data?.error) {
