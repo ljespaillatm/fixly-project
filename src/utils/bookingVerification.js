@@ -1,4 +1,4 @@
-import { supabase, supabaseAnonKey, supabaseUrl } from '../supabaseClient'
+import { supabase } from '../supabaseClient'
 
 export const VERIFICATION_EMAIL_FUNCTION = 'send-booking-verification-email'
 
@@ -7,28 +7,21 @@ export const generateVerificationCode = () => {
 }
 
 export const sendVerificationEmail = async ({ toEmail, code, bookingId }) => {
-  const functionUrl = `${supabaseUrl}/functions/v1/${VERIFICATION_EMAIL_FUNCTION}`
-  const anonKey = supabaseAnonKey
-
-  const response = await fetch(functionUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
-    },
-    body: JSON.stringify({
+  const { data, error } = await supabase.functions.invoke(VERIFICATION_EMAIL_FUNCTION, {
+    body: {
       to: toEmail,
       subject: 'Codigo de verificacion de servicio - Fixly',
       bookingId,
       code,
       message: `Tu codigo de verificacion para finalizar el servicio es: ${code}`,
-    }),
+    },
   })
 
-  if (!response.ok) {
-    const bodyText = await response.text()
-    throw new Error(bodyText || 'No se pudo enviar el correo de verificacion.')
+  if (error) {
+    throw new Error(error.message || 'No se pudo enviar el correo de verificacion.')
+  }
+  if (data?.error) {
+    throw new Error(data.error)
   }
 }
 
