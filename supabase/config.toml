@@ -1,0 +1,11 @@
+# JWT en la puerta de Edge Functions: con claves de firma ES256 (JWT Signing Keys),
+# el gateway puede fallar antes de ejecutar el código. Estas funciones validan
+# el usuario con createClient + auth.getUser() dentro del handler.
+[functions.stripe-booking-checkout]
+verify_jwt = false
+
+[functions.stripe-booking-verify]
+verify_jwt = false
+
+[functions.admin-delete-user]
+verify_jwt = false
