@@ -29,9 +29,15 @@ const Register = () => {
       return
     }
 
+    const redirectBase = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { role },
+        emailRedirectTo: redirectBase,
+      },
     })
 
     if (error) {
@@ -39,31 +45,16 @@ const Register = () => {
       return
     }
 
-    const user = data.user
-
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          id: user.id,
-          email,
-          role,
-          onboarding_completed: false,
-        },
-      ])
-
-    if (profileError) {
-      alert(profileError.message)
+    // Con "Confirm email" activo no hay sesión hasta abrir el enlace del correo.
+    // El perfil lo crea el trigger public.handle_new_user (migración 20260425_profiles_on_auth_user).
+    if (!data.session) {
+      alert(
+        'Te enviamos un correo con un enlace para confirmar la cuenta. Cuando lo abras, podrás iniciar sesión.',
+      )
       return
     }
 
     alert('Usuario registrado correctamente ✅')
-
-    await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-
     window.location.href =
       role === 'contractor' ? '/#/contractor/preferences' : '/#/client/preferences'
   }

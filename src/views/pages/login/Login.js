@@ -55,7 +55,14 @@ const Login = () => {
     })
 
     if (error) {
-      alert('Credenciales incorrectas ❌')
+      const msg = (error.message || '').toLowerCase()
+      if (msg.includes('email not confirmed') || msg.includes('confirm')) {
+        alert(
+          'Debes confirmar el correo antes de entrar. Revisa tu bandeja (y spam) por el enlace de Fixly.',
+        )
+      } else {
+        alert(error.message || 'Credenciales incorrectas ❌')
+      }
       return
     }
 
